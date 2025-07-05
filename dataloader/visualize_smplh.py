@@ -195,4 +195,22 @@ for cId in range(0, batch_size):
 
 img = imagearray2file(images)
 show_image(np.array(img)[0])
-plt.show()
+# plt.show()
+
+# read single npz file
+npz_file = '../data/AMASS/AMASS_Complete/ACCAD/Female1General_c3d/A1 - Stand_poses.npz'
+npz_data = np.load(npz_file)
+print(npz_data.files)
+print(npz_data.items())
+time_length = len(npz_data['trans'])
+body_param = {
+    'root_orient': torch.Tensor(npz_data['poses'][:,:3]).to(device),
+    'pose_body': torch.Tensor(npz_data['poses'][:,3:66]).to(device),
+    'pose_hand': torch.Tensor(npz_data['poses'][:,66:]).to(device),
+    'trans': torch.Tensor(npz_data['trans']).to(device),
+    'betas': torch.Tensor(np.repeat(npz_data['betas'][:num_betas][np.newaxis], repeats=time_length, axis=0)).to(device),
+    'dmpls': torch.Tensor(npz_data['dmpls'][:, :num_dmpls]).to(device)
+}
+print('body parameters: \n{}'.format(' \n'.join(['{}: {}'.format(k, v.shape) for k, v in body_param.items()])))
+body_trans_root = bm(**{k:v for k,v in body_param.items() if k in ['pose_body', 'betas', 'pose_hand', 'dmpls', 'trans', 'root_orient']})
+npz_data.close()
