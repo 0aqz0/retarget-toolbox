@@ -121,4 +121,78 @@ ax.set_xlabel('X Label')
 ax.set_ylabel('Y Label')
 ax.set_zlabel('Z Label')
 ax.scatter(joints[:,0], joints[:,1], joints[:,2], s=30, c='red')
+# plt.show()
+
+amass_dir = '../data/AMASS/AMASS_Complete/'
+work_dir = '../data/AMASS/prepared_data'
+
+amass_split = {
+    'valid': ['SFU'],
+    'test': ['SSM_synced'],
+    'train': ['MPI_Limits']
+}
+from amass.data.prepare_data import prepare_amass
+prepare_amass(amass_split, amass_dir, work_dir)
+
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+import glob
+
+class AMASS_DS(Dataset):
+    def __init__(self, dataset_dir, num_betas=16):
+        self.ds = {}
+        for data_fname in glob.glob(osp.join(dataset_dir, "*.pt")):
+            print(data_fname)
+            k = osp.basename(data_fname).replace('.pt', '')
+            self.ds[k] = torch.load(data_fname)
+        self.num_betas = num_betas
+    
+    def __len__(self):
+        print(self.ds['trans'].shape)
+        return len(self.ds['trans'])
+    
+    def __getitem__(self, idx):
+        data = {k: self.ds[k][idx] for k in self.ds.keys()}
+        data['root_orient'] = data['pose'][:3]
+        data['pose_body'] = data['pose'][3:66]
+        data['pose_hand'] = data['pose'][66:]
+        data['betas'] = data['betas'][:self.num_betas]
+
+        return data
+    
+num_betas = 16
+test_split_dir = osp.join(work_dir, 'stage_III', 'test')
+ds = AMASS_DS(dataset_dir=test_split_dir, num_betas=num_betas)
+batch_size = 5
+dataloader = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=5)
+
+import trimesh
+from body_visualizer.tools.vis_tools import colors, imagearray2file
+from body_visualizer.mesh.mesh_viewer import MeshViewer
+from body_visualizer.tools.vis_tools import show_image
+
+# imw, imh = 1600, 1600
+# mv = MeshViewer(width=imw, height=imh, use_offscreen=True)
+
+from human_body_prior.body_model.body_model import BodyModel
+bm_fname = osp.join('./', 'body_models/smplh/male/model.npz')
+num_betas = 16
+num_dmpls = 8
+bm = BodyModel(bm_fname=bm_fname, num_betas=num_betas).to(device)
+faces = c2c(bm.f)
+
+bdata = next(iter(dataloader))
+body_v = bm.forward(**{k:v.to(device) for k,v in bdata.items() if k in ['pose_body', 'betas', 'pose_hand', 'dmpls', 'trans', 'root_orient']}).v
+view_angles = [0, 180, 90, -90]
+images = np.zeros([len(view_angles), batch_size, 1, imw, imh, 3])
+for cId in range(0, batch_size):
+    orig_body_mesh = trimesh.Trimesh(vertices=c2c(body_v[cId]), faces=c2c(bm.f), vertex_colors=np.tile(colors['grey'], [6890, 1]))
+    for rId, angle in enumerate(view_angles):
+        if angle != 0: orig_body_mesh.apply_transform(trimesh.transformations.rotation_matrix(np.radians(angle), (0,1,0)))
+        mv.set_meshes([orig_body_mesh])
+        images[rId, cId, 0] = mv.render(render_wireframe=False)
+        if angle != 0: orig_body_mesh.apply_transform(trimesh.transformations.rotation_matrix(np.radians(-angle), (0,1,0)))
+
+img = imagearray2file(images)
+show_image(np.array(img)[0])
 plt.show()
