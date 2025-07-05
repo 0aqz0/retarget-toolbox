@@ -109,3 +109,16 @@ def vis_body_transformed(fId = 0):
     show_image(body_image)
 
 vis_body_transformed(fId=0)
+
+import matplotlib.pyplot as plt
+joints = c2c(body_trans_root.Jtr[0])
+fig = plt.figure(figsize=(12, 12))
+ax = fig.add_subplot(projection='3d')
+ax.set_xlim([-1, 1])
+ax.set_ylim([-1, 1])
+ax.set_zlim([0, 2])
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
+ax.scatter(joints[:,0], joints[:,1], joints[:,2], s=30, c='red')
+plt.show()
