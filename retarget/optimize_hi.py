@@ -210,7 +210,7 @@ for mocap_file in mocap_files:
     contact = mocap_contact()  # [T-1, 2]
 
     # Hi graph
-    hi = yumi2graph('./Hi.urdf', hi_cfg)
+    hi = yumi2graph('../data/robot/Hi.urdf', hi_cfg)
     hi_leg = 0.9
     hi_init_pos = torch.tensor([0, 0, 1.02])
     lower_indices = [hi_cfg['joints_name'].index(joint) for joint in hi_cfg['lower_joints']]
