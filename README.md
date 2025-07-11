@@ -16,3 +16,11 @@ cd retarget
 python optimize_hi.py
 ```
 
+**Visualization**
+```bash
+cd viz
+# Human control with sliders
+python example/human_control.py
+# Play H5 File
+python example/h5_control.py
+```
