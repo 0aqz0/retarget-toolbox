@@ -75,8 +75,8 @@ cmu_mocaps = [
     # '../data/cmu-mocap/data/009/09_09_mirror_XYZ.bvh',
 ]
 xsens_mocaps = [
-    '../data/xsens-mocap-run/Run-001_XYZ.bvh',
-    '../data/xsens-mocap-run/Run-001_mirror_XYZ.bvh',
+    '../data/motion/xsens-mocap/Run-001_XYZ.bvh',
+    '../data/motion/xsens-mocap/Run-001_mirror_XYZ.bvh',
 ]
 mocap_files = pfnn_mocaps + lafan_mocaps + xsens_mocaps + cmu_mocaps
 # data_dir = '../data'
@@ -321,22 +321,12 @@ for mocap_file in mocap_files:
     vel = torch.cat([vel[:1], vel], dim=0)
     contact = torch.cat([contact[:1], contact], dim=0)
 
-    # Interpolation
-    from scipy.interpolate import CubicSpline
-    # spline fitting
-    t = np.arange(T) * parsed_data.framerate
-    cs = CubicSpline(t[::4], ang[::4].detach().cpu().numpy())
-    smooth_ang = cs(t)
-    # smooth_vel = cs(t, 1)
-    # smooth_acc = cs(t, 2)
-
     joints = hi_cfg['joints_name']
     jidx = [hi_cfg['joints_name'].index(j) for j in joints]
 
     hf = h5py.File(os.path.join('./saved/hi/', mocap_file.split('/')[-1][:-4] + '.h5'), 'w')
     g1 = hf.create_group('group1')
     g1.create_dataset('joint_angle', data=ang[:,jidx].detach().cpu().numpy())
-    g1.create_dataset('smooth_ang', data=smooth_ang[:,jidx])
     g1.create_dataset('joint_vel', data=vel[:,jidx].detach().cpu().numpy())
     g1.create_dataset('joint_pos', data=global_pos[:,jidx].detach().cpu().numpy())
     # g1.create_dataset('local_rot', data=R.from_matrix(local_rot.detach().cpu().numpy()).as_quat().reshape(T,-1,4)[:,jidx])
@@ -349,37 +339,6 @@ for mocap_file in mocap_files:
     g1.create_dataset('contact', data=contact.detach().cpu().numpy())
     hf.close()
     print('Target H5 file saved!')
-
-    ###################################################################
-    # AMP format
-    ###################################################################
-    # amp_obs_data = np.concatenate((
-    #     root_pos[2:, :].detach().cpu().numpy(),
-    #     root_rot_quat[2:, :],
-    #     ang[2: jidx].detach().cpu().numpy(),
-    #     local_root_vel[2:, :].detach().cpu().numpy(),
-    #     local_ang_vel[2:, :].detach().cpu().numpy(),
-    #     local_pos.reshape(T, -1, 3)[2:, foot_idx_L].detach().cpu().numpy(),
-    #     local_pos.reshape(T, -1, 3)[2:, foot_idx_R].detach().cpu().numpy(),
-    #     vel[2:, jidx].detach().cpu().numpy(),
-    # ), axis=1)
-    # print(amp_obs_data.shape)
-
-    # with open(os.path.join('./saved/hi/',  mocap_file.split('/')[-1][:-4] + '.txt'), 'w') as f:
-    #     f.write('{"LoopMode": "Wrap",\n"FrameDuration": 0.0083,\n"EnableCycleOffsetPosition": true,\n"EnableCycleOffsetRotation": true,\n"MotionWeight": 1.0,\n"Frames":[')
-    #     for i in range(len(amp_obs_data)):
-    #         f.write('[')
-    #         for j in range(len(amp_obs_data[0])):
-    #             if j == len(amp_obs_data[0]) - 1:
-    #                 f.write(str(amp_obs_data[i,j]))
-    #             else:
-    #                 f.write(str(amp_obs_data[i,j])+',')
-    #         if i == len(amp_obs_data) - 1:
-    #             f.write(']'+'\n')
-    #         else:
-    #             f.write(']'+','+'\n')
-    #     f.write(']}')
-    # print('Target txt file saved!')
 
     ###################################################################
     # Animation

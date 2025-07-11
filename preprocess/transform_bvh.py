@@ -3,7 +3,7 @@ import numpy as np
 import os
 from os import listdir
 
-data_path = '../data/xsens-mocap-run'
+data_path = '../data/motion/xsens-mocap'
 
 files = sorted([f for f in listdir(data_path) if f.endswith(".bvh") and '_XYZ' not in f])
 print(files, len(files))
