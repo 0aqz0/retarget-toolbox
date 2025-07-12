@@ -1,5 +1,5 @@
 # retarget-toolbox
-Human-robot motion retargeting method based on gradient descent with a user-friendly interface
+Motion Retargeting from Human Motion to Humanoid Robots Based on Gradient Descent with a User-Friendly Interface
 
 ## 🌟 Key Features
 
