@@ -1,7 +1,12 @@
 import gym, humanoid_gym
 import pybullet as p
+import argparse
 
-env = gym.make('hi-v0')
+parser = argparse.ArgumentParser(description="Human Control Interface")
+parser.add_argument('--env_name', type=str, default='hi-v0', help="Environment Name (hi-v0, wukong-v0, g1-v0)")
+args = parser.parse_args()
+
+env = gym.make(args.env_name)
 env.reset()
 
 motorIds = []

@@ -75,8 +75,8 @@ cmu_mocaps = [
     # '../data/cmu-mocap/data/009/09_09_mirror_XYZ.bvh',
 ]
 xsens_mocaps = [
-    '../data/motion/xsens-mocap/Run-001_XYZ.bvh',
-    '../data/motion/xsens-mocap/Run-001_mirror_XYZ.bvh',
+    '../data/motion/xsens-mocap/Walk-001_XYZ.bvh',
+    '../data/motion/xsens-mocap/Walk-001_mirror_XYZ.bvh',
 ]
 mocap_files = pfnn_mocaps + lafan_mocaps + xsens_mocaps + cmu_mocaps
 # data_dir = '../data'
@@ -243,7 +243,7 @@ for mocap_file in mocap_files:
         # detach upper body joints
         detach_x = []
         for idx, joint in enumerate(hi_cfg['joints_name']):
-            if joint in ['Base', 'A_Waist', 'Wrist_Z_L', 'Wrist_Y_L', 'Wrist_X_L', 'Wrist_Z_R', 'Wrist_Y_R', 'Wrist_X_R', 'Hip_X_L', 'Hip_X_R']:
+            if joint in ['Base', 'A_Waist', 'Wrist_Z_L', 'Wrist_Y_L', 'Wrist_X_L', 'Wrist_Z_R', 'Wrist_Y_R', 'Wrist_X_R', 'Hip_X_L', 'Hip_X_R', 'Shoulder_Z_L', 'Shoulder_Z_R']:
                 detach_x.append(x[:, idx].detach())
             else:
                 detach_x.append(x[:, idx])
@@ -307,11 +307,11 @@ for mocap_file in mocap_files:
         root_acc = root_vel[1:] - root_vel[:-1]
         ang_vel = ang[1:] - ang[:-1]
         ang_acc = ang_vel[1:] - ang_vel[:-1]
-        smooth_loss = 100*torch.norm(root_acc, dim=-1).mean() + 1*torch.norm(ang_acc[:, lower_indices], dim=-1).mean()
+        smooth_loss = 0.00001*torch.norm(ang_acc, dim=-1).mean()
 
         # loss = vec_loss + foot_loss
-        loss = vec_loss + foot_loss + contact_loss #+ smooth_loss
-        print(loss.item(), vec_loss.item(), foot_loss.item(), contact_loss.item(), smooth_loss.item())
+        loss = vec_loss + foot_loss + contact_loss + smooth_loss
+        # print(loss.item(), vec_loss.item(), foot_loss.item(), contact_loss.item(), smooth_loss.item())
         # backward
         loss.backward()
         # optimize
@@ -369,11 +369,11 @@ for mocap_file in mocap_files:
         fig.add_axes(ax)
         ax.set_title('Source')
         ax.view_init(elev=30, azim=45)
-        ax.set_xlim3d([-3.0, 3.0])
+        ax.set_xlim3d([-1.0, 1.0])
         ax.set_xlabel('X')
-        ax.set_ylim3d([-0.0, 6.0])
+        ax.set_ylim3d([-1.0, 1.0])
         ax.set_ylabel('Y')
-        ax.set_zlim3d([0.0, 6.0])
+        ax.set_zlim3d([0.0, 2.0])
         ax.set_zlabel('Z')
         lines = [ax.plot([], [], [], 'royalblue', marker='o')[0] for i in range(len(hi_cfg['edges']))]
         # create animation
