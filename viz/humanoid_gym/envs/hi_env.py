@@ -7,7 +7,7 @@ import numpy as np
 
 class HiEnv(gym.Env):
     """docstring for HiEnv"""
-    def __init__(self):
+    def __init__(self, viz_ee_ori=False):
         super(HiEnv, self).__init__()
         self.pos = np.array([0,0,1.02])
         self.rot = np.array([0,0,0,1])
@@ -44,6 +44,7 @@ class HiEnv(gym.Env):
             'Ankle_Y_R',
             'Ankle_X_R',
         ]
+        self.viz_ee_ori = viz_ee_ori
         p.connect(p.GUI)
         p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=90, cameraPitch=-10, cameraTargetPosition=[0,0,0.8])
         self.reset()
@@ -84,6 +85,21 @@ class HiEnv(gym.Env):
         #             print("Collision Occurred in Link {} & Link {}!!!".format(contact[3], contact[4]))
         #             p.changeVisualShape(self.Uid, contact[3], rgbaColor=[1,0,0,1])
         #             p.changeVisualShape(self.Uid, contact[4], rgbaColor=[1,0,0,1])
+        # Plot End Effector Orientation
+        if self.viz_ee_ori:
+            p.removeAllUserDebugItems()
+            for name in ['HAND_L','HAND_R', 'FOOT_L', 'FOOT_R']:
+                worldLinkFramePosition, worldLinkFrameOrientation = p.getLinkState(self.Uid, self.link2Index[name])[4:6]
+                linkRotMat = np.array(p.getMatrixFromQuaternion(worldLinkFrameOrientation)).reshape(3,3)
+                x_axis = linkRotMat[:,0]
+                x_end = (np.array(worldLinkFramePosition) + np.array(x_axis)*0.2).tolist()
+                self.x_line_id = p.addUserDebugLine(worldLinkFramePosition, x_end, (1,0,0))
+                y_axis = linkRotMat[:,1]
+                y_end = (np.array(worldLinkFramePosition) + np.array(y_axis)*0.2).tolist()
+                self.y_line_id = p.addUserDebugLine(worldLinkFramePosition, y_end, (0,1,0))
+                z_axis = linkRotMat[:,2]
+                z_end = (np.array(worldLinkFramePosition) + np.array(z_axis)*0.2).tolist()
+                self.z_line_id = p.addUserDebugLine(worldLinkFramePosition, z_end, (0,0,1))
         
         self.step_counter += 1
 
